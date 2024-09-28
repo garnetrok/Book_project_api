@@ -1,0 +1,77 @@
+<script type="module">
+    import { bookApi } from './api.js';
+
+    let book;
+    let reviews = [];
+
+    async function loadBookDetails() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookId = urlParams.get('id');
+        
+        try {
+            book = await bookApi.getBookDetails(bookId);
+            displayBookDetails();
+            loadReviews();
+        } catch (error) {
+            console.error('도서 상세 정보를 불러오는 중 오류 발생:', error);
+            document.getElementById('bookDetails').innerHTML = '도서 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.';
+        }
+    }
+
+    // displayBookDetails 함수는 변경 없음
+
+    async function loadReviews() {
+        try {
+            reviews = await bookApi.getBookReviews(book.id);
+            displayReviews();
+        } catch (error) {
+            console.error('리뷰를 불러오는 중 오류 발생:', error);
+            document.getElementById('reviews').innerHTML = '리뷰를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.';
+        }
+    }
+
+    async function addReview() {
+        const reviewerName = document.getElementById('reviewerName').value.trim();
+        const reviewInput = document.getElementById('reviewInput').value.trim();
+        const starRating = document.querySelector('input[name="star"]:checked');
+
+        if (reviewerName && reviewInput && starRating) {
+            const rating = parseInt(starRating.value);
+            const newReview = {
+                name: reviewerName,
+                content: reviewInput,
+                rating: rating
+            };
+
+            try {
+                await bookApi.addBookReview(book.id, newReview);
+                await loadReviews();
+                // 입력 필드 초기화
+                document.getElementById('reviewerName').value = '';
+                document.getElementById('reviewInput').value = '';
+                starRating.checked = false;
+            } catch (error) {
+                console.error('리뷰 등록 중 오류 발생:', error);
+                alert('리뷰 등록에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
+        } else {
+            alert('이름, 리뷰 내용, 별점을 모두 입력해주세요.');
+        }
+    }
+
+    // displayReviews 함수는 변경 없음
+
+    async function likeReview(reviewId) {
+        try {
+            await bookApi.likeReview(reviewId);
+            await loadReviews();
+        } catch (error) {
+            console.error('리뷰 좋아요 중 오류 발생:', error);
+            alert('리뷰 좋아요에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+    }
+
+    // 이벤트 리스너 설정은 변경 없음
+
+    loadBookDetails();
+</script>
